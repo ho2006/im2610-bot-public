@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark"><title>IM / 2610 · 做市控制台</title>
+  <link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/" aria-label="IM 做市控制台"><span class="brand-mark">im<span>·</span></span><div>MARKET LAB<small>模拟交易工作站</small></div></a>
+  <div class="workspace-label">WORKSPACE</div>
+  <nav aria-label="主导航">
+    <a href="#overview" class="active"><span>◈</span> 交易总览</a>
+    <a href="#orders"><span>≡</span> 委托与成交</a>
+    <a href="#settings"><span>⌘</span> 策略参数</a>
+    <a href="#events"><span>◎</span> 运行日志</a>
+  </nav>
+  <div class="sidebar-bottom"><span class="tiny-dot"></span> SINGLE CONTRACT ENGINE<br><strong>IM2610</strong><small>CFFEX · 中证 1000 股指期货<br>Python / SQLite</small></div>
+</aside>
+<main>
+  <header><div class="breadcrumb">交易工作站 <span>/</span> <strong>IM2610</strong></div><div class="header-right"><span id="connection" class="connection">未连接</span><time id="clock">--:--:-- CST</time><button id="logout" class="text-button">锁定</button></div></header>
+  <section id="login" class="login-panel">
+    <div class="eyebrow">PRIVATE WORKSPACE</div><h1>连接你的交易工作站<span class="accent">。</span></h1>
+    <p>输入服务器 .env 中的控制台令牌。令牌仅保存在当前页面内存中。</p>
+    <form id="login-form"><label for="token">控制台令牌</label><div class="login-row"><input id="token" type="password" autocomplete="off" placeholder="BOT_TOKEN" required><button class="primary">连接控制台 ↗</button></div></form>
+    <p class="muted">此工作站只接入模拟交易账户。公开盘口轮询不提供毫秒级或严格 post-only 保证。</p>
+  </section>
+  <div id="dashboard" hidden>
+    <section id="overview" class="page-heading"><div><div class="eyebrow">MICROSTRUCTURE / MARKET MAKING</div><h1>IM<span class="muted">2610</span> <span id="mode" class="badge">—</span></h1><p>盘口失衡 × Microprice × 库存管理</p></div><div class="controls"><button data-command="reconcile">核查恢复</button><button data-command="pause">暂停并撤单</button><button data-command="start" class="primary">▶ 启动策略</button></div></section>
+    <div id="notice" class="notice" role="status"><span class="tiny-dot"></span><span id="note">读取状态中…</span><span id="cycle-age" class="push-right">—</span></div>
+    <div class="metrics">
+      <article class="metric"><span>最新成交价 <small>INDEX POINTS</small></span><strong id="last-price">—</strong><p>报价时间 <span id="quote-time">—</span></p></article>
+      <article class="metric"><span>Microprice <small>FAIR VALUE</small></span><strong id="micro">—</strong><p>中间价 <span id="mid">—</span></p></article>
+      <article class="metric"><span>账户权益 <small>CNY</small></span><strong id="equity">—</strong><p>当日监控盈亏 <span id="pnl">—</span></p></article>
+      <article class="metric"><span>净库存 <small>CONTRACTS</small></span><strong id="inventory">—</strong><p>多 <span id="long">—</span> / 空 <span id="short">—</span><span class="push-right">保证金 <span id="use-rate">—</span></span></p></article>
+    </div>
+    <div class="market-grid">
+      <article class="panel chart-panel"><div class="panel-heading"><div><h2>价格与公允价值</h2><p>公开盘口快照 · 最近 300 个采样</p></div><div class="legend"><span class="mid-dot">中间价</span><span class="micro-dot">Microprice</span><span class="fair-dot">平滑公允价</span></div></div><canvas id="price-chart" role="img" aria-label="中间价、Microprice 和平滑公允价历史曲线"></canvas><div class="chart-foot"><span id="feed-age">行情未就绪</span><span>SINA · L1 SNAPSHOT</span></div></article>
+      <article class="panel book-panel"><div class="panel-heading"><div><h2>盘口 / Level 1</h2><p>挂单数量单位：手</p></div><span id="spread" class="badge">— ticks</span></div>
+        <div class="book-label"><span>方向</span><span>价格</span><span>数量</span></div>
+        <div class="book-row ask"><span>卖一 ASK</span><strong id="ask">—</strong><span id="ask-size">—</span></div>
+        <div class="book-mid"><span>MID</span><strong id="book-mid">—</strong></div>
+        <div class="book-row bid"><span>买一 BID</span><strong id="bid">—</strong><span id="bid-size">—</span></div>
+        <div class="imbalance-title"><span>盘口失衡 OBI</span><strong id="obi">—</strong></div><meter id="obi-meter" min="-1" max="1" value="0" aria-label="盘口失衡"></meter><div class="meter-labels"><span>卖压</span><span>均衡</span><span>买压</span></div>
+        <div class="book-note">仅使用真实买卖一档数量。数据缺失或过期时停止报价。</div>
+      </article>
+    </div>
+    <div class="strategy-bar"><div><span class="tiny-dot"></span><strong id="strategy-state">PAUSED</strong><span id="plan-text">等待策略计算</span><span id="entry-filter-state" role="status">开仓环境：等待行情</span></div><button data-command="flatten" class="danger-outline">只减仓至空仓</button></div>
+    <section id="orders" class="panel section-space"><div class="panel-heading"><div><h2>委托与成交</h2><p>本程序持久化委托 · 成交来自当前交易账户</p></div><div class="tabs"><button id="orders-tab" class="selected">委托记录</button><button id="trades-tab">当日成交</button></div></div><div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div></section>
+    <section id="settings" class="panel section-space"><div class="panel-heading"><div><h2>策略与风险参数</h2><p>模拟盘手续费为 0。暂停并撤清挂单后可保存；保证金比例需按比赛规则校准。</p></div><button id="save-config">保存参数</button></div><form id="config-form" class="config-grid"></form><div class="panel-footer">固定合约 IM2610 · 最小变动 0.2 点 · 每点 200 元 · 不自动换月 · 收盘减仓为被动限价，不能保证成交</div></section>
+    <section id="events" class="panel section-space"><div class="panel-heading"><div><h2>运行日志</h2><p>下单意图先落库，回执不明立即锁定</p></div><span class="badge">AUDIT TRAIL</span></div><div id="event-list" class="event-list"></div></section>
+    <footer><span>IM / MARKET LAB</span><span>仅模拟交易 · 公共行情可能延迟 · 首次采样权益作为当日监控基准</span></footer>
+  </div>
+  <div id="toast" role="alert" hidden></div>
+</main>
+</body></html>

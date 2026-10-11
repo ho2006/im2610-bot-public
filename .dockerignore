@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.git
+.venv
+data
+artifacts
+__pycache__
+**/__pycache__
+*.sqlite3*
+*.lock

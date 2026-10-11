@@ -1,0 +1,45 @@
+services:
+  bot:
+    build: .
+    init: true
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      BOT_MODE: ${BOT_MODE:-paper}
+      BOT_DB: /app/data/${BOT_MODE:-paper}.sqlite3
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - bot-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 60s
+    mem_limit: 256m
+  collector:
+    build: .
+    init: true
+    restart: unless-stopped
+    command: ["python", "scripts/collect_l1.py", "--db", "/app/data/l1.sqlite3", "--interval", "5"]
+    volumes:
+      - bot-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "python", "scripts/collect_l1.py", "--db", "/app/data/l1.sqlite3", "--health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+volumes:
+  bot-data:
